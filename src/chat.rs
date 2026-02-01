@@ -18,6 +18,7 @@ impl ChatSession {
         
         // Initialize logger and load summary
         let _ = logger.init();
+        let _ = logger.log_session_start();
         let user_summary = logger.update_session_start().unwrap_or_default();
         
         // Load chat history for context

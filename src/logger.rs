@@ -115,6 +115,19 @@ impl ClientLogger {
         Ok(())
     }
 
+    pub fn log_session_start(&self) -> std::io::Result<()> {
+        let path = self.chat_log_path();
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)?;
+        
+        let timestamp = Local::now().format("%d-%m-%Y %H:%M:%S");
+        writeln!(file, "\n--- Session started at {} ---\n", timestamp)?;
+        
+        Ok(())
+    }
+
     pub fn load_today_history(&self) -> Vec<(String, String)> {
         let path = self.chat_log_path();
         let mut history = Vec::new();
