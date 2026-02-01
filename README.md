@@ -11,6 +11,8 @@ cargo run
 Then connect:
 ```bash
 ssh -p 2222 localhost
+# or for login without adding host key to known_hosts and user id
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 localhost
 ```
 
 ## Configuration

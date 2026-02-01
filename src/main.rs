@@ -8,11 +8,13 @@ use anyhow::Result;
 use clap::Parser;
 use russh::server::Server as _;
 use russh::keys::{PrivateKey, Algorithm};
+use russh::keys::ssh_key::LineEnding;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;
+use russh::keys::signature::rand_core::OsRng;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
@@ -39,9 +41,9 @@ struct Args {
     #[arg(short, long, default_value = "logs", env = "SSHLLM_LOGS_DIR")]
     logs: PathBuf,
 
-    /// Path to SSH host key (generates ephemeral key if not specified)
-    #[arg(short = 'k', long, env = "SSHLLM_HOST_KEY")]
-    host_key: Option<PathBuf>,
+    /// Path to SSH host key
+    #[arg(short = 'k', long, default_value = "keys/host_ed25519", env = "SSHLLM_HOST_KEY")]
+    host_key: PathBuf,
 
     /// Custom system prompt
     #[arg(short, long, env = "SSHLLM_SYSTEM_PROMPT")]
@@ -66,16 +68,25 @@ async fn main() -> Result<()> {
         api_key: std::env::var("SSHLLM_API_KEY").ok(),
         system_prompt: args.system_prompt.unwrap_or_else(|| "You are a helpful AI assistant. Be concise and friendly.".to_string()),
         logs_dir: args.logs.clone(),
-        host_key_path: args.host_key.clone(),
+        host_key_path: Some(args.host_key.clone()),
     });
 
     // Generate or load host key
-    let host_key = if let Some(ref path) = config.host_key_path {
-        let key_data = std::fs::read_to_string(path)?;
+    let host_key_path = &args.host_key;
+    if let Some(parent) = host_key_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    let host_key = if host_key_path.exists() {
+        info!("Loading host key from {}", host_key_path.display());
+        let key_data = std::fs::read_to_string(host_key_path)?;
         PrivateKey::from_openssh(key_data.as_bytes())?
     } else {
-        info!("Using ephemeral host key (use --host-key to persist)");
-        PrivateKey::random(&mut rand::rngs::OsRng, Algorithm::Ed25519)?
+        info!("Generating new host key at {}", host_key_path.display());
+        let key = PrivateKey::random(&mut OsRng, Algorithm::Ed25519)?;
+        let key_data = key.to_openssh(LineEnding::LF)?;
+        std::fs::write(host_key_path, key_data.as_bytes())?;
+        key
     };
 
     info!("Starting sshllm server on port {}", config.port);

@@ -1,9 +1,9 @@
 use crate::chat::ChatSession;
 use crate::config::Config;
 use crate::logger::ClientLogger;
-use russh::keys::PublicKey;
+use russh::keys::{PublicKey, PublicKeyBase64};
 use russh::server::{Auth, Handler, Msg, Session};
-use russh::{Channel, ChannelId, CryptoVec};
+use russh::{Channel, ChannelId, CryptoVec, MethodSet};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -36,6 +36,7 @@ impl russh::server::Server for SshServer {
             id,
             clients: self.clients.clone(),
             client_ip: addr.map(|a| a.ip().to_string()).unwrap_or_else(|| "127.0.0.1".to_string()),
+            identity: None,
         }
     }
 
@@ -50,6 +51,7 @@ pub struct SshHandler {
     id: usize,
     clients: Arc<Mutex<HashMap<usize, ClientState>>>,
     client_ip: String,
+    identity: Option<String>,
 }
 
 impl Handler for SshHandler {
@@ -60,10 +62,12 @@ impl Handler for SshHandler {
         channel: Channel<Msg>,
         session: &mut Session,
     ) -> Result<bool, Self::Error> {
-        info!("Channel opened for client {} from {}", self.id, self.client_ip);
+        info!("Channel opened for client {} (IP: {})", self.id, self.client_ip);
         
-        let client_ip: std::net::IpAddr = self.client_ip.parse().unwrap_or_else(|_| "127.0.0.1".parse().unwrap());
-        let logger = ClientLogger::new(&self.config.logs_dir, client_ip);
+        // Final identity: Use key fingerprint if available, otherwise IP
+        let final_identity = self.identity.clone().unwrap_or_else(|| self.client_ip.clone());
+        
+        let logger = ClientLogger::new(&self.config.logs_dir, final_identity);
         let chat_session = Arc::new(Mutex::new(ChatSession::new(self.config.clone(), logger)));
         
         let state = ClientState {
@@ -78,14 +82,29 @@ impl Handler for SshHandler {
     }
 
     async fn auth_none(&mut self, _user: &str) -> Result<Auth, Self::Error> {
-        Ok(Auth::Accept)
+        // Rejecting 'none' auth forces clients to offer a public key if they have one
+        Ok(Auth::Reject {
+            proceed_with_methods: Some(MethodSet::all()),
+            partial_success: false,
+        })
     }
 
     async fn auth_password(&mut self, _user: &str, _password: &str) -> Result<Auth, Self::Error> {
+        // We accept all passwords but don't set an identity here, 
+        // fallback to IP will happen in channel_open_session.
         Ok(Auth::Accept)
     }
 
-    async fn auth_publickey(&mut self, _user: &str, _key: &PublicKey) -> Result<Auth, Self::Error> {
+    async fn auth_publickey(&mut self, _user: &str, key: &PublicKey) -> Result<Auth, Self::Error> {
+        // Generate a fingerprint from the public key bytes
+        use sha2::{Sha256, Digest};
+        let mut hasher = Sha256::new();
+        hasher.update(key.public_key_bytes());
+        let hash = hasher.finalize();
+        let fingerprint = format!("key_{}", &hex::encode(hash)[..12]);
+        
+        info!("Client authenticated with key {}", fingerprint);
+        self.identity = Some(fingerprint);
         Ok(Auth::Accept)
     }
 

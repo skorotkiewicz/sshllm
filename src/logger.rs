@@ -1,7 +1,6 @@
 use chrono::{Local, Utc};
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
-use std::net::IpAddr;
 use std::path::PathBuf;
 
 #[derive(Default, Clone)]
@@ -15,8 +14,8 @@ pub struct ClientLogger {
 }
 
 impl ClientLogger {
-    pub fn new(logs_dir: &PathBuf, client_ip: IpAddr) -> Self {
-        let base_dir = logs_dir.join(client_ip.to_string());
+    pub fn new(logs_dir: &PathBuf, identity: String) -> Self {
+        let base_dir = logs_dir.join(identity);
         Self { base_dir }
     }
 
