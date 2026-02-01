@@ -82,16 +82,16 @@ impl Handler for SshHandler {
     }
 
     async fn auth_none(&mut self, _user: &str) -> Result<Auth, Self::Error> {
-        // Rejecting 'none' auth forces clients to offer a public key if they have one
+        // partial_success: true tells the client "you are partially logged in, 
+        // please provide a key if you have one". This helps identify key-users
+        // while still allowing guest access.
         Ok(Auth::Reject {
             proceed_with_methods: Some(MethodSet::all()),
-            partial_success: false,
+            partial_success: true,
         })
     }
 
     async fn auth_password(&mut self, _user: &str, _password: &str) -> Result<Auth, Self::Error> {
-        // We accept all passwords but don't set an identity here, 
-        // fallback to IP will happen in channel_open_session.
         Ok(Auth::Accept)
     }
 
@@ -101,7 +101,7 @@ impl Handler for SshHandler {
         let mut hasher = Sha256::new();
         hasher.update(key.public_key_bytes());
         let hash = hasher.finalize();
-        let fingerprint = format!("key_{}", &hex::encode(hash)[..12]);
+        let fingerprint = format!("key_{}", &hex::encode(hash));
         
         info!("Client authenticated with key {}", fingerprint);
         self.identity = Some(fingerprint);
