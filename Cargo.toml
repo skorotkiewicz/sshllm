@@ -25,7 +25,7 @@ anyhow = "1"
 
 # Tracing for logs
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "chrono"] }
 
 # CLI arguments
 clap = { version = "4", features = ["derive", "env"] }

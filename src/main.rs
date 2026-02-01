@@ -58,7 +58,10 @@ struct Args {
 async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer()
+            .with_target(false)
+            .compact()
+            .with_timer(tracing_subscriber::fmt::time::ChronoUtc::new("%Y-%m-%dT%H:%M:%SZ".to_string())))
         .with(tracing_subscriber::EnvFilter::from_default_env().add_directive("sshllm=info".parse()?))
         .init();
 
