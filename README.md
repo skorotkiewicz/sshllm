@@ -11,7 +11,7 @@ cargo run
 Then connect:
 ```bash
 ssh -p 2222 localhost
-# or for login without adding host key to known_hosts and user id
+# or connect without storing host keys or specifying identity (auto-recognizes keys)
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 localhost
 ```
 
@@ -27,16 +27,20 @@ Environment variables:
 | `SSHLLM_MODEL` | `default` | Model to use |
 | `SSHLLM_SYSTEM_PROMPT` | `You are a helpful AI assistant. Be concise and friendly.` | Custom system prompt |
 | `SSHLLM_LOGS_DIR` | `logs` | Directory for chat logs |
-| `SSHLLM_HOST_KEY` | - | Path to persist host key |
+| `SSHLLM_HOST_KEY` | `keys/host_ed25519` | Path to persistent host key |
 
 ## Logging Structure
 
+Users are identified by their SSH key fingerprint. If no key is provided, the server falls back to the client IP address.
+
 ```
 logs/
-└── 192.168.1.100/
-    ├── summary.txt           # User info (name, sessions, etc.)
-    ├── chat_2026-02-01.log   # Daily chat log
-    └── chat_2026-02-02.log
+├── key_abc123def456/         # Identity via SSH key fingerprint
+│   ├── summary.txt           # User info (name, sessions, etc.)
+│   └── chat_2026-02-01.log   # Daily chat log
+└── 127.0.0.1/               # Identity via IP fallback
+    ├── summary.txt
+    └── chat_2026-02-01.log
 ```
 
 ## Commands
@@ -50,8 +54,10 @@ logs/
 
 ## Features
 
-- **Immediate feedback** - Real-time thinking indicator shows you when the AI is processing
-- **Persistent identity** - Recognizes users by IP and remembers their name across sessions
-- **Chat history** - Automatic daily chat logs with timestamps
-- **Context awareness** - Maintains conversation memory within the active session
-- **Simple access** - Standard SSH terminal access with no specialized client required
+- **Immediate feedback** - Real-time thinking indicator shows you when the AI is processing.
+- **Robust Identity** - Recognizes users primarily by SSH public key fingerprints.
+- **IP Fallback** - Seamlessly functions via IP-based folders for users without SSH keys.
+- **Chat history** - Automatic daily chat logs with structured metadata.
+- **Context awareness** - Automatically loads recent daily context upon reconnection.
+- **Persistent Host Key** - Automatically generates and saves server identity on first run.
+- **Standard SSH** - No specialized client required; works with any terminal SSH client.

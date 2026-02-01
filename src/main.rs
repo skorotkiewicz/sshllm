@@ -68,7 +68,6 @@ async fn main() -> Result<()> {
         api_key: std::env::var("SSHLLM_API_KEY").ok(),
         system_prompt: args.system_prompt.unwrap_or_else(|| "You are a helpful AI assistant. Be concise and friendly.".to_string()),
         logs_dir: args.logs.clone(),
-        host_key_path: Some(args.host_key.clone()),
     });
 
     // Generate or load host key

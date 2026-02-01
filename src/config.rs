@@ -7,5 +7,4 @@ pub struct Config {
     pub api_key: Option<String>,
     pub system_prompt: String,
     pub logs_dir: PathBuf,
-    pub host_key_path: Option<PathBuf>,
 }
