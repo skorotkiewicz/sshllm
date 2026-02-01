@@ -37,7 +37,7 @@ Environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SSHLLM_PORT` | `2222` | SSH server port |
-| `SSHLLM_API_URL` | `http://[IP_ADDRESS]:[PORT]/v1` | OpenAI-compatible API URL |
+| `SSHLLM_API_URL` | - | OpenAI-compatible API URL |
 | `SSHLLM_API_KEY` | - | API key (optional for local LLMs) |
 | `SSHLLM_MODEL` | `default` | Model to use |
 | `SSHLLM_SYSTEM_PROMPT` | `You are a helpful AI assistant. Be concise and friendly.` | Custom system prompt |

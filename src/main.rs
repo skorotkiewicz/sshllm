@@ -30,7 +30,7 @@ struct Args {
     port: u16,
 
     /// LLM API endpoint
-    #[arg(short = 'e', long = "endpoint", default_value = "http://[IP_ADDRESS]:[PORT]/v1", env = "SSHLLM_API_URL")]
+    #[arg(short = 'e', long = "endpoint", env = "SSHLLM_API_URL")]
     api_url: String,
 
     /// LLM API key
