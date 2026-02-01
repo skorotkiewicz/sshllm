@@ -33,6 +33,10 @@ struct Args {
     #[arg(short = 'e', long = "endpoint", default_value = "http://[IP_ADDRESS]:[PORT]/v1", env = "SSHLLM_API_URL")]
     api_url: String,
 
+    /// LLM API key
+    #[arg(short = 'a', long, env = "SSHLLM_API_KEY")]
+    api_key: Option<String>,
+
     /// Model name
     #[arg(short, long, default_value = "default", env = "SSHLLM_MODEL")]
     model: String,
@@ -65,7 +69,7 @@ async fn main() -> Result<()> {
         port: args.port,
         api_base_url: args.api_url.clone(),
         model: args.model.clone(),
-        api_key: std::env::var("SSHLLM_API_KEY").ok(),
+        api_key: args.api_key.clone(),
         system_prompt: args.system_prompt.unwrap_or_else(|| "You are a helpful AI assistant. Be concise and friendly.".to_string()),
         logs_dir: args.logs.clone(),
     });

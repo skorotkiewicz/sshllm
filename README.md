@@ -2,10 +2,25 @@
 
 SSH-accessible AI chat server powered by any OpenAI-compatible LLM API.
 
-## Quick Start
+## Installation
 
 ```bash
-cargo run
+cargo build --release
+```
+
+## Usage
+
+```bash
+# With custom settings
+./target/release/sshllm \
+    --port 2222 \
+    --endpoint "http://localhost:8080/v1" \
+    --model "default" \
+    --api-key "optional" \
+    --system-prompt "You are a helpful AI assistant. Be concise and friendly."
+
+# Full options
+./target/release/sshllm --help
 ```
 
 Then connect:
